@@ -40,10 +40,10 @@ class DashboardScreen extends ConsumerWidget {
                 Text('نظرة سريعة', style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 12),
                 Wrap(spacing: 12, runSpacing: 12, children: [
-                  _statCard(context, 'الموظفين', stats.totalEmployees.toString(), Icons.people),
-                  _statCard(context, 'المخازن', stats.totalStores.toString(), Icons.store),
-                  _statCard(context, 'الأصناف', stats.totalItems.toString(), Icons.inventory_2),
-                  _statCard(context, 'تنبيهات منخفضة المخزون', stats.lowStockCount.toString(), Icons.warning, color: Colors.red),
+                  _statCard(context, 'الموظفين', stats.totalEmployees.toString(), Icons.people, onTap: () => context.go('/employees')),
+                  _statCard(context, 'المخازن', stats.totalStores.toString(), Icons.store, onTap: () => context.go('/stores')),
+                  _statCard(context, 'الأصناف', stats.totalItems.toString(), Icons.inventory_2, onTap: () => context.go('/items')),
+                  _statCard(context, 'تنبيهات منخفضة المخزون', stats.lowStockCount.toString(), Icons.warning, color: Colors.red, onTap: () => context.go('/items')),
                 ]),
                 const SizedBox(height: 20),
                 Text('آخر الأحداث', style: Theme.of(context).textTheme.titleMedium),
@@ -65,21 +65,25 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _statCard(BuildContext context, String title, String value, IconData icon, {Color? color}) {
-    return Card(
-      elevation: 2,
-      child: SizedBox(
-        width: 180,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Text(title, style: Theme.of(context).textTheme.bodyMedium),
-              Icon(icon, color: color ?? Theme.of(context).primaryColor),
+  Widget _statCard(BuildContext context, String title, String value, IconData icon, {Color? color, required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Card(
+        elevation: 2,
+        child: SizedBox(
+          width: 180,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Text(title, style: Theme.of(context).textTheme.bodyMedium),
+                Icon(icon, color: color ?? Theme.of(context).primaryColor),
+              ]),
+              const SizedBox(height: 8),
+              Text(value, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
             ]),
-            const SizedBox(height: 8),
-            Text(value, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
-          ]),
+          ),
         ),
       ),
     );
