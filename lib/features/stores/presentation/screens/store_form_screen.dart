@@ -1,98 +1,154 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:imdad/features/stores/presentation/providers/stores_provider.dart';
+
+import '../providers/stores_provider.dart';
 
 class StoreFormScreen extends ConsumerStatefulWidget {
   final int? storeId;
-  const StoreFormScreen({super.key, this.storeId});
+
+  const StoreFormScreen({
+    super.key,
+    this.storeId,
+  });
 
   @override
-  ConsumerState<StoreFormScreen> createState() => _StoreFormScreenState();
+  ConsumerState<StoreFormScreen> createState() =>
+      _StoreFormScreenState();
 }
 
-class _StoreFormScreenState extends ConsumerState<StoreFormScreen> {
+class _StoreFormScreenState
+    extends ConsumerState<StoreFormScreen> {
+
   final _formKey = GlobalKey<FormState>();
-  final _nameCtl = TextEditingController();
-  final _codeCtl = TextEditingController();
-  final _locationCtl = TextEditingController();
-  bool _isEdit = false;
+
+  final _nameController = TextEditingController();
+  final _codeController = TextEditingController();
+  final _locationController = TextEditingController();
+
   bool _saving = false;
 
   @override
   void initState() {
     super.initState();
-    _isEdit = widget.storeId != null;
-    if (_isEdit) _load();
+
+    if (widget.storeId != null) {
+      _loadStore();
+    }
   }
 
-  Future<void> _load() async {
-    final s = ref.read(storesProvider);
-    if (s is AsyncData) {
-      final rows = s.value;
-      final item = rows.firstWhere((r) => r['id'] == widget.storeId, orElse: () => {});
-      _nameCtl.text = item['name']?.toString() ?? '';
-      _codeCtl.text = item['code']?.toString() ?? '';
-      _locationCtl.text = item['location']?.toString() ?? '';
-    } else {
-      await ref.read(storesProvider.notifier).load();
-      _load();
+  Future<void> _loadStore() async {
+    final data = ref.read(storesProvider);
+
+    if (data is AsyncData) {
+      final rows = data.value;
+
+      if (rows == null) return;
+
+      for (final item in rows) {
+        if (item['id'] == widget.storeId) {
+          _nameController.text =
+              item['name']?.toString() ?? '';
+
+          _codeController.text =
+              item['code']?.toString() ?? '';
+
+          _locationController.text =
+              item['location']?.toString() ?? '';
+
+          break;
+        }
+      }
     }
   }
 
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() => _saving = true);
+
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() {
+      _saving = true;
+    });
+
     final data = {
-      'name': _nameCtl.text.trim(),
-      'code': _codeCtl.text.trim(),
-      'location': _locationCtl.text.trim(),
-      'is_active': 1,
+      'name': _nameController.text,
+      'code': _codeController.text,
+      'location': _locationController.text,
     };
-    try {
-      if (_isEdit) {
-        await ref.read(storesProvider.notifier).update(widget.storeId!, data);
-      } else {
-        await ref.read(storesProvider.notifier).add(data);
-      }
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم الحفظ')));
-        context.pop();
-      }
-    } finally {
-      setState(() => _saving = false);
+
+    if (widget.storeId == null) {
+      await ref.read(storesProvider.notifier).add(data);
+    } else {
+      await ref.read(storesProvider.notifier).update(
+        widget.storeId!,
+        data,
+      );
+    }
+
+    if (mounted) {
+      Navigator.pop(context);
     }
   }
 
-  @override
-  void dispose() {
-    _nameCtl.dispose();
-    _codeCtl.dispose();
-    _locationCtl.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        appBar: AppBar(title: Text(_isEdit ? 'تعديل مخزن' : 'إضافة مخزن')),
-        body: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Form(
-            key: _formKey,
-            child: ListView(
-              children: [
-                TextFormField(controller: _nameCtl, decoration: const InputDecoration(labelText: 'اسم المخزن'), validator: (v) => v == null || v.trim().isEmpty ? 'مطلوب' : null),
-                const SizedBox(height: 8),
-                TextFormField(controller: _codeCtl, decoration: const InputDecoration(labelText: 'الكود')),
-                const SizedBox(height: 8),
-                TextFormField(controller: _locationCtl, decoration: const InputDecoration(labelText: 'الموقع')),
-                const SizedBox(height: 16),
-                _saving ? const Center(child: CircularProgressIndicator()) : ElevatedButton(onPressed: _save, child: const Text('حفظ')),
-              ],
-            ),
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          widget.storeId == null
+              ? 'إضافة مخزن'
+              : 'تعديل مخزن',
+        ),
+      ),
+
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+
+        child: Form(
+          key: _formKey,
+
+          child: Column(
+            children: [
+
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  labelText: 'اسم المخزن',
+                ),
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) {
+                    return 'أدخل اسم المخزن';
+                  }
+                  return null;
+                },
+              ),
+
+              TextFormField(
+                controller: _codeController,
+                decoration: const InputDecoration(
+                  labelText: 'رمز المخزن',
+                ),
+              ),
+
+              TextFormField(
+                controller: _locationController,
+                decoration: const InputDecoration(
+                  labelText: 'الموقع',
+                ),
+              ),
+
+              const SizedBox(height:20),
+
+              _saving
+                  ? const CircularProgressIndicator()
+                  : ElevatedButton(
+                      onPressed: _save,
+                      child: const Text('حفظ'),
+                    ),
+            ],
           ),
         ),
       ),
